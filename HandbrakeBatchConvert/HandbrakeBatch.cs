@@ -16,5 +16,30 @@ namespace HandbrakeBatchConvert
         {
             InitializeComponent();
         }
+
+        private void btnSourceBrowse_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnDestinationBrowse_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnSaveQuery_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnPreview_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
