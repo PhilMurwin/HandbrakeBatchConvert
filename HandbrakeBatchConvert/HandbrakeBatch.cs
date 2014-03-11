@@ -10,9 +10,9 @@ using System.Windows.Forms;
 
 namespace HandbrakeBatchConvert
 {
-    public partial class Form1 : Form
+    public partial class HandbrakeBatch : Form
     {
-        public Form1()
+        public HandbrakeBatch()
         {
             InitializeComponent();
         }

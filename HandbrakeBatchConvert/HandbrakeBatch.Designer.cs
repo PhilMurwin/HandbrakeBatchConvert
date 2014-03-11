@@ -1,6 +1,6 @@
 ﻿namespace HandbrakeBatchConvert
 {
-    partial class Form1
+    partial class HandbrakeBatch
     {
         /// <summary>
         /// Required designer variable.
