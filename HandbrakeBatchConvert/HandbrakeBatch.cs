@@ -19,12 +19,14 @@ namespace HandbrakeBatchConvert
 
         private void btnSourceBrowse_Click(object sender, EventArgs e)
         {
-
+            var sourcePath = folderBrowse();
+            txtSource.Text = sourcePath;
+            txtDestination.Text = sourcePath + "\\Converted";
         }
 
         private void btnDestinationBrowse_Click(object sender, EventArgs e)
         {
-
+            txtDestination.Text = folderBrowse();
         }
 
         private void btnSaveQuery_Click(object sender, EventArgs e)
@@ -40,6 +42,18 @@ namespace HandbrakeBatchConvert
         private void btnStart_Click(object sender, EventArgs e)
         {
 
+        }
+
+        private string folderBrowse()
+        {
+            var folderPath = "";
+
+            if (folderBrowserDialog1.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                folderPath = folderBrowserDialog1.SelectedPath;
+            }
+
+            return folderPath;
         }
     }
 }
