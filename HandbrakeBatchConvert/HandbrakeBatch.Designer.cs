@@ -226,6 +226,7 @@
             this.cboFileExtension.Name = "cboFileExtension";
             this.cboFileExtension.Size = new System.Drawing.Size(111, 21);
             this.cboFileExtension.TabIndex = 1;
+            this.cboFileExtension.Text = "mp4";
             // 
             // cboDeleteSource
             // 
@@ -237,6 +238,7 @@
             this.cboDeleteSource.Name = "cboDeleteSource";
             this.cboDeleteSource.Size = new System.Drawing.Size(111, 21);
             this.cboDeleteSource.TabIndex = 3;
+            this.cboDeleteSource.Text = "No";
             // 
             // lblDeleteSource
             // 
@@ -257,6 +259,7 @@
             this.cboMetaData.Name = "cboMetaData";
             this.cboMetaData.Size = new System.Drawing.Size(111, 21);
             this.cboMetaData.TabIndex = 5;
+            this.cboMetaData.Text = "No";
             // 
             // lblMetadata
             // 
@@ -280,6 +283,7 @@
             this.cboPriority.Name = "cboPriority";
             this.cboPriority.Size = new System.Drawing.Size(111, 21);
             this.cboPriority.TabIndex = 7;
+            this.cboPriority.Text = "Normal";
             // 
             // lblPriority
             // 
@@ -300,6 +304,7 @@
             this.cboPreset.Name = "cboPreset";
             this.cboPreset.Size = new System.Drawing.Size(111, 21);
             this.cboPreset.TabIndex = 3;
+            this.cboPreset.Text = "Normal";
             // 
             // lblPreset
             // 
@@ -354,10 +359,13 @@
             this.Controls.Add(this.pnlConfig);
             this.Controls.Add(this.pnlFile);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.KeyPreview = true;
             this.MaximizeBox = false;
             this.Name = "HandbrakeBatch";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "Handbrake Batch Convert";
+            this.Load += new System.EventHandler(this.HandbrakeBatch_Load);
+            this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.HandbrakeBatch_KeyPress);
             this.grpSource.ResumeLayout(false);
             this.grpSource.PerformLayout();
             this.grpDestination.ResumeLayout(false);
