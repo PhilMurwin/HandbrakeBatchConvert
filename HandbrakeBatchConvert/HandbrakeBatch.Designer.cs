@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(HandbrakeBatch));
             this.grpSource = new System.Windows.Forms.GroupBox();
             this.btnSourceBrowse = new System.Windows.Forms.Button();
             this.txtSource = new System.Windows.Forms.TextBox();
@@ -370,6 +371,7 @@
             this.Controls.Add(this.pnlConfig);
             this.Controls.Add(this.pnlFile);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.KeyPreview = true;
             this.MaximizeBox = false;
             this.Name = "HandbrakeBatch";
