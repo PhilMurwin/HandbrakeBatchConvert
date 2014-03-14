@@ -16,7 +16,14 @@ namespace HandbrakeBatchConvert
         {
             InitializeComponent();
 
-            txtPreview.Text = string.Join("\n", files);
+            if (files != null || files.Length > 0)
+            {
+                txtPreview.Text = string.Join("\n", files);
+            }
+            else
+            {
+                txtPreview.Text = "No files found.";
+            }
         }
     }
 }
