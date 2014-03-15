@@ -259,6 +259,8 @@ namespace HandbrakeBatchConvert
 
         private void HandbrakeBatch_Load(object sender, EventArgs e)
         {
+            this.Text += " v" + System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+
             progressStatus.DisplayStyle = ProgressBarWithLabel.ProgressBarDisplayText.CustomText;
             progressStatus.CustomText = "0 of 0";
 
