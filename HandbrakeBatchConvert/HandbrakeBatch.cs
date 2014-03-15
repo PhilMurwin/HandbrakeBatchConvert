@@ -174,32 +174,32 @@ namespace HandbrakeBatchConvert
             for (int i = 0; i < totalCommands; i++)
             {
                 var fileCount = i+1;
+                var filePath = files[i];
 
                 try
                 {
-                    logger.Info(string.Format("Proccesing file [{0} of {1}]: {2}.", fileCount, totalCommands, files[i]));
+                    logger.Info(string.Format("Proccesing file [{0} of {1}]: {2}.", fileCount, totalCommands, filePath));
+                    ProgressBar_Update(string.Format("Processing {0} of {1}", fileCount, totalCommands), false, false);
 
                     var command = commands[i];
                     var processInfo = new ProcessStartInfo();
-                    //processInfo.UseShellExecute = false;
-                    //processInfo.RedirectStandardError = true;
-                    //processInfo.CreateNoWindow = true;
-                    //processInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                    processInfo.UseShellExecute = false;
+                    processInfo.RedirectStandardError = true;
+                    processInfo.CreateNoWindow = true;
+                    processInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     processInfo.FileName = ".\\Resources\\HandBrakeCLI.exe";
                     processInfo.Arguments = command;
 
                     var process = Process.Start(processInfo);
-                    //var standardError = process.StandardError.ReadToEnd();
+                    var standardError = process.StandardError.ReadToEnd();
                     process.WaitForExit();
+
+                    WriteHandbrakeLogToFile(filePath, standardError);
 
                     if (process.ExitCode == 1)
                     {
                         throw new Exception("Handbrake crashed!");
                     }
-                    //else
-                    //{
-                    //    logger.Warn(standardError);
-                    //}
                 }
                 catch (Exception err)
                 {
@@ -215,15 +215,22 @@ namespace HandbrakeBatchConvert
                 }
                 finally
                 {
-                    // The status text should reflect the file # we are currently processing
-                    // Since we are setting the status text at the end of the loop, we need to add 1 to the file count.
-                    var statusText = "{0} of {1} " + (fileCount == totalCommands ? "completed" : "processing");
-                    statusText = string.Format(statusText, (fileCount == totalCommands ? fileCount : fileCount+1), totalCommands);
+                    // Only set status text if we're done.
+                    var statusText = (fileCount == totalCommands) ? string.Format("{0} of {1} Completed", fileCount, totalCommands) : "";
                     var errorOccurred = (errorCount > 0);
 
-                    progressStatus.Invoke(new D_ProgressBar_Update(this.ProgressBar_Update), statusText, errorOccurred);
+                    ProgressBar_Update(statusText, errorOccurred);
                 }
             }
+        }
+
+        private void WriteHandbrakeLogToFile(string filePath, string log)
+        {
+            var fileInfo = new FileInfo(filePath);
+            var fileName = Path.GetFileNameWithoutExtension(fileInfo.Name);
+
+            var handbrakeLog = LogManager.GetLogger("_Handbrake." + fileName);
+            handbrakeLog.Info(log);
         }
 
         private void ConfigureProgressBar(int totalCommands)
@@ -251,13 +258,32 @@ namespace HandbrakeBatchConvert
             }
         }
 
-        private delegate void D_ProgressBar_Update(string statusText, bool errorOccurred);
+        private delegate void ProgressBar_Update_Handler(string statusText, bool errorOccurred = false, bool performStep = true);
 
-        public void ProgressBar_Update(string statusText, bool errorOccurred)
+        public void ProgressBar_Update(string statusText, bool errorOccurred = false, bool performStep = true)
         {
-            progressStatus.ForeColor = Color.Red;
-            progressStatus.CustomText = statusText;
-            progressStatus.PerformStep();
+            // If we're in the wrong thread use Invoke and the delegate
+            if (progressStatus.InvokeRequired)
+            {
+                progressStatus.Invoke(new ProgressBar_Update_Handler(ProgressBar_Update), statusText, errorOccurred, performStep);
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(statusText))
+            {
+                progressStatus.CustomText = statusText;
+            }
+
+            // Update progress bar
+            if (errorOccurred)
+            {
+                progressStatus.ForeColor = Color.Red;
+            }
+
+            if (performStep)
+            {
+                progressStatus.PerformStep();
+            }
         }
 
         private void HandbrakeBatch_Load(object sender, EventArgs e)
