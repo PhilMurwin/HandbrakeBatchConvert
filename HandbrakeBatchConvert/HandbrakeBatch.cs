@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,13 +15,46 @@ namespace HandbrakeBatchConvert
 {
     public partial class HandbrakeBatch : Form
     {
-        bool ProcessingHandbrake = false;
-        Logger logger = LogManager.GetCurrentClassLogger();
+        #region Members
+        private bool ProcessingHandbrake = false;
+        private Logger logger = LogManager.GetCurrentClassLogger();
+        private BackgroundWorker bgWorker;
 
+
+        private string Destination
+        {
+            get
+            {
+                var destination = txtDestination.Text;
+                destination = (destination.EndsWith("\\") ? destination : destination + "\\") + "{0}." + cboFileExtension.Text;
+
+                return destination;
+            }
+        }
+
+        private bool CustomQuery
+        {
+            get
+            {
+                return !string.IsNullOrEmpty(txtQuery.Text);
+            }
+        }
+
+        private string Query
+        {
+            get
+            {
+                return CustomQuery ? txtQuery.Text : cboPreset.Text;
+            }
+        }
+        #endregion Members
+
+        #region Constructor
         public HandbrakeBatch()
         {
             InitializeComponent();
         }
+        #endregion Constructor
 
         private void btnSourceBrowse_Click(object sender, EventArgs e)
         {
@@ -46,9 +80,20 @@ namespace HandbrakeBatchConvert
 
         private void btnPreview_Click(object sender, EventArgs e)
         {
-            var commands = GetProcessingCommands();
+            var files = BatchConvert.GetFileList(txtSource.Text);
 
-            Preview preview = new Preview(commands.ToArray());
+            var longestStringLength = files.Aggregate("", (max, cur) => max.Length > cur.Length ? max : cur).Length;
+
+            // Build list of input/output files
+            for(int i = 0; i < files.Count; i++)
+            {
+                var file = files[i];
+                var fileInfo = new FileInfo(file);
+                file = "Source: " + file.PadRight(longestStringLength + 4) + "\tDestination: " + string.Format(" " + Destination, Path.GetFileNameWithoutExtension(fileInfo.Name));
+                files[i] = file;
+            }
+
+            Preview preview = new Preview(files.ToArray());
             preview.Show();
         }
 
@@ -56,45 +101,111 @@ namespace HandbrakeBatchConvert
         {
             logger.Info("Enter Processing Code");
 
+            // Validation
+            logger.Info("Make sure the Destination directory exists");
+            var destination = txtDestination.Text;
+
+            if (string.IsNullOrEmpty(destination))
+            {
+                MessageBox.Show("You must select a valid destination directory!");
+                return;
+            }
+            else
+            {
+                Directory.CreateDirectory(destination);
+            }
+
+            // After Validation
+            // Save the Query Text if it has changed
             if (!string.IsNullOrEmpty(txtQuery.Text))
             {
                 AppConfig.Query = txtQuery.Text;
             }
 
-            logger.Info("Retrieve processing commands.");
-            var commands = GetProcessingCommands();
+            var files = BatchConvert.GetFileList(txtSource.Text);
+            ConfigureProgressBar(files.Count);
 
             ProcessingHandbrake = true;
+            StartBackgroundWorker(files);
+        }
 
+        private void StartBackgroundWorker(List<string> files)
+        {
+            if (bgWorker == null)
+            {
+                bgWorker = new BackgroundWorker();
+                bgWorker.RunWorkerCompleted += bgWorker_WorkCompleted;
+                bgWorker.DoWork += bgWorker_DoWork;
+            }
+
+            // Disable text boxes and buttons
+            ToggleControlsEnabled(false);
+            bgWorker.RunWorkerAsync(new List<object>{ files, Destination, Query, CustomQuery });
+        }
+
+        private void bgWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            var obj = e.Argument as List<object>;
+            var files = obj[0] as List<string>;
+            var destination = obj[1] as string;
+            var query = obj[2] as string;
+            var customQuery = (bool)obj[3];
+            ProcessVideos(files, destination, query, customQuery);
+        }
+
+        private void bgWorker_WorkCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // Disable text boxes and buttons
+            ToggleControlsEnabled(true);
+
+            ProcessingHandbrake = false;
+            logger.Info("Processing Complete, exit code");
+        }
+
+        private void ProcessVideos(List<string> files, string destination, string query, bool customQuery)
+        {
             logger.Info("Begin processing");
-            int totalCommands = commands.Count;
-            progressStatus.Step = 100 / totalCommands;
-            progressStatus.ForeColor = Color.Green;
+            logger.Info("Retrieve processing commands.");
+
+            var commands = BatchConvert.GetProcessingCommands(files, destination, query, customQuery);
+            int totalCommands = commands.Count;            
             var errorCount = 0;
 
-            for(int i = 0; i < totalCommands; i++)
+            for (int i = 0; i < totalCommands; i++)
             {
+                var fileCount = i+1;
+
                 try
                 {
+                    logger.Info(string.Format("Proccesing file [{0} of {1}]: {2}.", fileCount, totalCommands, files[i]));
+
                     var command = commands[i];
                     var processInfo = new ProcessStartInfo();
+                    //processInfo.UseShellExecute = false;
+                    //processInfo.RedirectStandardError = true;
+                    //processInfo.CreateNoWindow = true;
+                    //processInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     processInfo.FileName = ".\\Resources\\HandBrakeCLI.exe";
                     processInfo.Arguments = command;
 
                     var process = Process.Start(processInfo);
+                    //var standardError = process.StandardError.ReadToEnd();
                     process.WaitForExit();
 
                     if (process.ExitCode == 1)
                     {
                         throw new Exception("Handbrake crashed!");
                     }
+                    //else
+                    //{
+                    //    logger.Warn(standardError);
+                    //}
                 }
                 catch (Exception err)
                 {
                     errorCount++;
                     string errMessage = "Exception: Something broke\n" + err.Message;
                     logger.ErrorException(errMessage, err);
-                    progressStatus.ForeColor = Color.Red;
 
                     if (errorCount > 2)
                     {
@@ -102,61 +213,59 @@ namespace HandbrakeBatchConvert
                         break;
                     }
                 }
+                finally
+                {
+                    var statusText = fileCount.ToString() + " of " + totalCommands.ToString();
+                    var errorOccurred = (errorCount > 0);
 
-                progressStatus.PerformStep();
+                    progressStatus.Invoke(new D_ProgressBar_Update(this.ProgressBar_Update), statusText, errorOccurred);
+                }
             }
-
-            ProcessingHandbrake = false;
-
-            logger.Info("Processing Complete, exit code");
         }
 
-        private List<string> GetProcessingCommands()
+        private void ConfigureProgressBar(int totalCommands)
         {
-            var custom = !string.IsNullOrEmpty(txtQuery.Text);
-            var query = custom ? txtQuery.Text : cboPreset.Text;
-            var destination = txtDestination.Text;
-            destination = (destination.EndsWith("\\") ? destination : destination + "\\") + "{0}." + cboFileExtension.Text;
+            progressStatus.ForeColor = Color.Green;
+            progressStatus.Minimum = 1;
+            progressStatus.Maximum = totalCommands;
+            progressStatus.Step = 1;
+            progressStatus.Value = 1;
 
-            var files = BatchConvert.GetFileList(txtSource.Text);
-#if DEBUG
-            files = files.Take(1).ToArray();
-#endif
-            var commands = new List<string>(files.Length);
+            progressStatus.DisplayStyle = ProgressBarWithLabel.ProgressBarDisplayText.CustomText;
+            progressStatus.CustomText = "1 of " + totalCommands.ToString();
+        }
 
-            foreach (var file in files)
+        private void ToggleControlsEnabled(bool enabled)
+        {
+            foreach (Control control in this.Controls)
             {
-                commands.Add(BatchConvert.BuildCLICommand(file, destination, query, custom));
+                if (control.GetType() == typeof(ProgressBarWithLabel.ProgressBarWLabel))
+                {
+                    continue;
+                }
+
+                control.Enabled = enabled;
             }
-            return commands;
+        }
+
+        private delegate void D_ProgressBar_Update(string statusText, bool errorOccurred);
+
+        public void ProgressBar_Update(string statusText, bool errorOccurred)
+        {
+            progressStatus.ForeColor = Color.Red;
+            progressStatus.CustomText = statusText;
+            progressStatus.PerformStep();
         }
 
         private void HandbrakeBatch_Load(object sender, EventArgs e)
         {
+            progressStatus.DisplayStyle = ProgressBarWithLabel.ProgressBarDisplayText.CustomText;
+            progressStatus.CustomText = "0 of 0";
+
             // Load any saved settings
             txtSource.Text = AppConfig.Source;
             txtDestination.Text = AppConfig.Destination;
             txtQuery.Text = AppConfig.Query;
-        }
-
-        private void HandbrakeBatch_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            // If the user presses escape exit the application
-            // If we're currently processing files display a warning first
-            if (e.KeyChar == (char)Keys.Escape)
-            {
-                bool confirmClose = true;
-
-                if (ProcessingHandbrake)
-                {
-                    confirmClose = MessageBox.Show("Currently processing files, are you sure you want to exit?", "Confirm Exit?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning) == System.Windows.Forms.DialogResult.Yes;
-                }
-
-                if (confirmClose)
-                {
-                    this.Close();
-                }
-            }
         }
 
         private string OpenFolderDialog()
@@ -170,5 +279,44 @@ namespace HandbrakeBatchConvert
 
             return folderPath;
         }
+
+        private void HandbrakeBatch_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // If the user presses escape exit the application            
+            if (e.KeyChar == (char)Keys.Escape)
+            {
+                // Relies on FormClosing for the confirm dialog if necessary
+                this.Close();
+            }            
+        }
+
+        bool IsFormClosing = false;
+        private void HandbrakeBatch_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (!IsFormClosing)
+            {
+                IsFormClosing = true;
+                CloseMe();
+                e.Cancel = true;
+                IsFormClosing = false;
+            }
+        }
+
+        private void CloseMe()
+        {
+            bool confirmClose = true;
+
+            // If we're currently processing files display a warning first
+            if (ProcessingHandbrake)
+            {
+                var result = MessageBox.Show("Currently processing files, are you sure you want to exit?", "Confirm Exit?", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
+                confirmClose = (result == System.Windows.Forms.DialogResult.Yes);
+            }
+
+            if (confirmClose)
+            {
+                this.Close();
+            }
+        }       
     }
 }

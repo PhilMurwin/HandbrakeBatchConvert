@@ -69,6 +69,9 @@
       <DependentUpon>Preview.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
+    <Compile Include="ProgressBarWLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="HandbrakeBatch.resx">
       <DependentUpon>HandbrakeBatch.cs</DependentUpon>

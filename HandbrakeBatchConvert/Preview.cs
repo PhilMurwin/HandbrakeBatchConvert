@@ -15,6 +15,7 @@ namespace HandbrakeBatchConvert
         public Preview(string[] files)
         {
             InitializeComponent();
+            txtPreview.Font = new Font(FontFamily.GenericMonospace, txtPreview.Font.Size);
 
             if (files != null || files.Length > 0)
             {

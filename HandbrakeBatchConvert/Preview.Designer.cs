@@ -36,17 +36,17 @@
             this.txtPreview.Dock = System.Windows.Forms.DockStyle.Fill;
             this.txtPreview.Location = new System.Drawing.Point(0, 0);
             this.txtPreview.Name = "txtPreview";
-            this.txtPreview.Size = new System.Drawing.Size(423, 470);
+            this.txtPreview.Size = new System.Drawing.Size(649, 381);
             this.txtPreview.TabIndex = 0;
             this.txtPreview.Text = "";
+            this.txtPreview.WordWrap = false;
             // 
             // Preview
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(423, 470);
+            this.ClientSize = new System.Drawing.Size(649, 381);
             this.Controls.Add(this.txtPreview);
-            this.KeyPreview = true;
             this.Name = "Preview";
             this.Text = "Preview";
             this.ResumeLayout(false);

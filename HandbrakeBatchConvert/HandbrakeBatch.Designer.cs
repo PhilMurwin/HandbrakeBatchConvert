@@ -54,7 +54,7 @@
             this.pnlFiller = new System.Windows.Forms.Panel();
             this.pnlConfig = new System.Windows.Forms.Panel();
             this.pnlControl = new System.Windows.Forms.Panel();
-            this.progressStatus = new System.Windows.Forms.ProgressBar();
+            this.progressStatus = new ProgressBarWithLabel.ProgressBarWLabel();
             this.btnPreview = new System.Windows.Forms.Button();
             this.btnStart = new System.Windows.Forms.Button();
             this.folderBrowserDialog1 = new System.Windows.Forms.FolderBrowserDialog();
@@ -336,19 +336,20 @@
             // 
             // progressStatus
             // 
-            this.progressStatus.Location = new System.Drawing.Point(6, 9);
+            this.progressStatus.CustomText = null;
+            this.progressStatus.DisplayStyle = ProgressBarWithLabel.ProgressBarDisplayText.Percentage;
+            this.progressStatus.Location = new System.Drawing.Point(3, 8);
             this.progressStatus.Name = "progressStatus";
-            this.progressStatus.Size = new System.Drawing.Size(370, 23);
-            this.progressStatus.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
+            this.progressStatus.Size = new System.Drawing.Size(358, 23);
             this.progressStatus.TabIndex = 6;
             // 
             // btnPreview
             // 
-            this.btnPreview.Location = new System.Drawing.Point(392, 8);
+            this.btnPreview.Location = new System.Drawing.Point(367, 8);
             this.btnPreview.Name = "btnPreview";
-            this.btnPreview.Size = new System.Drawing.Size(75, 23);
+            this.btnPreview.Size = new System.Drawing.Size(100, 23);
             this.btnPreview.TabIndex = 5;
-            this.btnPreview.Text = "Preview CLI";
+            this.btnPreview.Text = "Preview Files";
             this.btnPreview.UseVisualStyleBackColor = true;
             this.btnPreview.Click += new System.EventHandler(this.btnPreview_Click);
             // 
@@ -377,6 +378,7 @@
             this.Name = "HandbrakeBatch";
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
             this.Text = "Handbrake Batch Convert";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.HandbrakeBatch_FormClosing);
             this.Load += new System.EventHandler(this.HandbrakeBatch_Load);
             this.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.HandbrakeBatch_KeyPress);
             this.grpSource.ResumeLayout(false);
@@ -424,7 +426,7 @@
         private System.Windows.Forms.Label lblQuery;
         private System.Windows.Forms.Panel pnlFiller;
         private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog1;
-        private System.Windows.Forms.ProgressBar progressStatus;
+        private ProgressBarWithLabel.ProgressBarWLabel progressStatus;
     }
 }
 
