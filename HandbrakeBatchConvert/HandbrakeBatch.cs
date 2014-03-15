@@ -215,7 +215,9 @@ namespace HandbrakeBatchConvert
                 }
                 finally
                 {
-                    var statusText = fileCount.ToString() + " of " + totalCommands.ToString();
+                    // The status text should reflect the file # we are currently processing
+                    // Since we are setting the status text at the end of the loop, we need to add 1 to the file count.
+                    var statusText = (fileCount+1).ToString() + " of " + totalCommands.ToString();
                     var errorOccurred = (errorCount > 0);
 
                     progressStatus.Invoke(new D_ProgressBar_Update(this.ProgressBar_Update), statusText, errorOccurred);
